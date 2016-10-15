@@ -30,7 +30,10 @@ _CFLAGS = -I$(IDIR) -Wall
 
 CFLAGS = 
 
-OBJECTS = main.o
+SRC = $(wildcard $(SDIR)/*.c)
+
+# Generate .o object files rules
+OBJECTS = $(foreach file, $(SRC), $(file:$(SDIR)/%.c=$(BDIR)/%.o))
 
 BIN = main
 
@@ -46,7 +49,7 @@ endif
 all: $(BDIR) $(BIN)
 
 # Generates the executable 
-$(BIN): $(BDIR)/$(OBJECTS) 
+$(BIN): $(OBJECTS) 
 	$(CC) $(_CFLAGS) $(LIBS) $^ -o $(BDIR)/$@ $(CFLAGS)
 
 # Generates the objects
@@ -69,7 +72,7 @@ $(BDIR):
 # Cleans working directory.
 .PHONY: clean
 clean:
-	rm -rf bin/ $(ZIPNAME).zip
+	rm -rf bin/ $(ZIPNAME).zip vgcore.*
 
 # Including the dependency file
-include $(BDIR)/$(OBJECTS:%.o=%.d)
+include $(OBJECTS:%.o=%.d)
