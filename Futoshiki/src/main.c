@@ -20,21 +20,22 @@ const int y_dir[] = {0, 0, -1, 1};
 
 // Heurísticas.
 bool MRV = true;
-bool FORWARD_CHECKING = false;
+bool FORWARD_CHECKING = true;
+bool INSERT_IN_QUEUE;
 
 /* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
 	// Desempatando pela quantidade de desigualdades que envolvem a casa.
-	/*if ((*((Cell **)a))->n == (*((Cell **)b))->n){
+	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
 		return (*((Cell **)a))->r - (*((Cell **)b))->r;
-	}*/
+	}
 
 	// Ordenando de acordo com a quantidade de possibilidades.
 	return (*((Cell **)b))->n - (*((Cell **)a))->n;
 }
 
 /* Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
-void greater_constraint(Cell *cell, int value, int step){
+bool greater_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
@@ -56,18 +57,22 @@ void greater_constraint(Cell *cell, int value, int step){
 
 		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			if (INSERT_IN_QUEUE){
+				if (MRV){
+					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+				}
+				else{
+					queue_replace(q, b->ref[cell->x][cell->y], &cell);
+				}
 			}
 		}
 	}
+
+	return cell->n == 0;
 }
 
 /* Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
-void lesser_constraint(Cell *cell, int value, int step){
+bool lesser_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
@@ -89,18 +94,22 @@ void lesser_constraint(Cell *cell, int value, int step){
 
 		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			if (INSERT_IN_QUEUE){
+				if (MRV){
+					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+				}
+				else{
+					queue_replace(q, b->ref[cell->x][cell->y], &cell);
+				}
 			}
 		}
 	}
+
+	return cell->n == 0;
 }
 
 // Elimina o valor value das possibilidades da casa cell.
-void equal_constraint(Cell *cell, int value, int step){
+bool equal_constraint(Cell *cell, int value, int step){
 	int prev, cur;
 
 	// Se for uma casa vazia.
@@ -113,49 +122,72 @@ void equal_constraint(Cell *cell, int value, int step){
 		if ((prev and !cur) or (!prev and cur)){
 			cell->n -= step;
 
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			if (INSERT_IN_QUEUE){
+				if (MRV){
+					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+				}
+				else{
+					queue_replace(q, b->ref[cell->x][cell->y], &cell);
+				}
 			}
 		}
 	}
+
+	return cell->n == 0;
 }
 
-void change_possibilities(Cell *cell, int value, int step){
+bool change_possibilities(Cell *cell, int value, int step){
+	bool fc = false;
 	int i;
 
 	for (i = 0; i < 4; i++){
 		// Impondo restrições de >.
 		if (cell->greater[i]){
-			greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+			fc = fc or greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+
+			if (FORWARD_CHECKING and fc){
+				return false;
+			}
 		}
 
 		// Impondo restrições de <.
 		if (cell->lesser[i]){
-			lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+			fc = fc or lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+
+			if (FORWARD_CHECKING and fc){
+				return false;
+			}
 		}
 	}
 
 	// Impondo restrições estilo Sudoku.
 	for (i = 0; i < b->d; i++){
 		if (i != cell->y){
-			equal_constraint(b->cell[cell->x][i], value, step);
+			fc = fc or equal_constraint(b->cell[cell->x][i], value, step);
+
+			if (FORWARD_CHECKING and fc){
+				return false;
+			}
 		}
 
 		if (i != cell->x){
-			equal_constraint(b->cell[i][cell->y], value, step);
+			fc = fc or equal_constraint(b->cell[i][cell->y], value, step);
+
+			if (FORWARD_CHECKING and fc){
+				return false;
+			}
 		}
 	}
+
+	return true;
 }
 
-void update(Cell *cur, int value){
+bool update(Cell *cur, int value){
 	// Atualizando o valor da casa.
 	cur->value = value;
 
 	// Reduzindo as possibilidades.
-	change_possibilities(cur, value, 1);
+	return change_possibilities(cur, value, 1);
 }
 
 void outdate(Cell *cur, int value){
@@ -190,6 +222,17 @@ bool solve_recursively(){
 		// If value is consistent with Assignment according to Constraints.
 		if (!cur->possibility[i]){
 			// Add var = value to Assignment.
+
+			if (FORWARD_CHECKING){
+				INSERT_IN_QUEUE = false;
+
+				if (update(cur, i) == false){
+					continue;
+				}
+
+				INSERT_IN_QUEUE = true;
+			}
+
 			update(cur, i);
 
 			// If Recursive Backtracking == success.
