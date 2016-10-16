@@ -252,6 +252,28 @@ void solve(){
 }
 
 int main(int argc, char *argv[]){
+	
+	if(argc > 1){
+		if(argv[1][0] < '1' or argv[1][0] > '3'){
+			printf("Incorrect use of function. Usage: ./main n, wherein n is a number from 1 to 3 representing with heuristic you wish to use.\n");
+			return 0;
+		}
+		int op = atoi(argv[1]);
+		if(op == 1){
+			MRV = false;
+			FORWARD_CHECKING = false;
+		} else if (op == 2){
+			FORWARD_CHECKING = true;
+			MRV = false;
+		} else if(op == 3){
+			MRV = true;
+			FORWARD_CHECKING = true;
+		} else {
+			printf("Incorrect use of function. Usage: ./main n, wherein n is a number from 1 to 3 representing with heuristic you wish to use.\n");
+			return 0;			
+		}
+	}
+
 	clock_t start, end;
 	int n, i;
 
