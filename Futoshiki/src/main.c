@@ -12,10 +12,6 @@ Board *b;
 Queue *q;
 PriorityQueue *pq;
 
-// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
-int x_dir[] = {-1, 1, 0, 0};
-int y_dir[] = {0, 0, -1, 1};
-
 int cell_compare(const void *a, const void *b){
 	// Cell *x = *(Cell **)a;
 	// Cell *y = *(Cell **)b;

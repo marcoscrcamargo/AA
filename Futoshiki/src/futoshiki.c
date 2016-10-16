@@ -42,10 +42,56 @@ Board *read_board(){
 	return b;
 }
 
+int max(int a, int b){
+	return a > b ? a : b;
+}
+
+int g_dfs(Board *b, int **g_chain, int x, int y){
+	int i;
+
+	for (i = 0; i < 4; i++){
+		if (b->cell[x][y]->greater[i]){
+			g_chain[x][y] = max(g_chain[x][y], g_dfs(b, g_chain, x + x_dir[i], y + y_dir[i]));
+		}
+	}
+
+	return g_chain[x][y] + 1;
+}
+
+void check_chains(Board *b){
+	int **g_chain, **l_chain;
+	int i, j;
+
+	g_chain = (int **)malloc(b->d * sizeof(int *));
+	l_chain = (int **)malloc(b->d * sizeof(int *));
+
+	for (i = 0; i < b->d; i++){
+		g_chain[i] = (int *)calloc(b->d, sizeof(int));
+		l_chain[i] = (int *)calloc(b->d, sizeof(int));
+	}
+
+	for (i = 0; i < b->d; i++){
+		for (j = 0; j < b->d; j++){
+			if (!g_chain[i][j]){
+				g_dfs(b, g_chain, i, j);
+			}
+		}
+	}
+
+	for (i = 0; i < b->d; i++){
+		for (j = 0; j < b->d; j++){
+			printf("%d ", g_chain[i][j]);
+		}
+
+		printf("\n");
+	}
+}
+
 void generate_possibilities(Board *b){
 	int i, j, k, x;
 
 	// Usar uma DFS para remover as possibilidades de "chains".
+	check_chains(b);
 
 	// Removendo impossibilidades devido a linha e coluna.
 	for (i = 0; i < b->d; i++){
