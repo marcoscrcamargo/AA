@@ -8,6 +8,10 @@
 #define LEFT 2 // (0, -1)
 #define RIGHT 3 // (0, +1)
 
+// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
+int x_dir[] = {-1, 1, 0, 0};
+int y_dir[] = {0, 0, -1, 1};
+
 typedef struct Board Board;
 typedef struct Cell Cell;
 
