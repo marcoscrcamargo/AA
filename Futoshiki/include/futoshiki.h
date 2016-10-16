@@ -12,24 +12,28 @@ typedef struct Board Board;
 typedef struct Cell Cell;
 
 struct Cell{
-	int value, n, x, y, r;
-	int *possibility;
-	bool *greater;
-	bool *lesser;
+	int value; // Valor da casa do tabuleiro.
+	int x, y; // Coordenadas (0 based).
+	int n; // Número de possibilidades.
+	int r; // Número de desigualdades envolvendo essa casa.
+	int *possibility; // Vetor de possibilidades. Conta a quantidade de restrições envolvendo cada valor do domínio.
+	bool *greater; // Guarda informação sobre as desigualdades.
+	bool *lesser; // Guarda informação sobre as desigualdades.
 };
 
 struct Board{
-	PQNode ***ref;
-	Cell ***cell;
-	int d;
+	void ***ref; // Referência para os nós da Priority Queue.
+	Cell ***cell; // Matriz de casas do tabuleiro.
+	int d; // Dimensão do tabuleiro.
 };
 
+/* Realiza a leitura e inicialização do tabuleiro. */
 Board *read_board();
 
-void generate_possibilities(Board *);
-
+/* Imprime o tabuleiro. */
 void print_board(const Board *);
 
+/* Libera o tabuleiro. */
 void free_board(Board *);
 
 #endif

@@ -1,7 +1,7 @@
 # Victor Forbes - 9293394
 
 all:
-	gcc src/*.c -I include/ -o main -g -Wall
+	gcc src/*.c -I include/ -o main -O2
 run:
 	./main
 fullrun:

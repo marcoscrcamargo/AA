@@ -2,38 +2,43 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "utils.h"
 #include "queue.h"
 #include "priority_queue.h"
 #include "futoshiki.h"
 
+// Variáveis globais.
 Board *b;
 Queue *q;
 PriorityQueue *pq;
 
 // Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
-int x_dir[] = {-1, 1, 0, 0};
-int y_dir[] = {0, 0, -1, 1};
+const int x_dir[] = {-1, 1, 0, 0};
+const int y_dir[] = {0, 0, -1, 1};
 
+// Heurísticas.
+bool MRV = true;
+bool FORWARD_CHECKING = false;
+
+/* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
+	// Desempatando pela quantidade de desigualdades que envolvem a casa.
 	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
 		return (*((Cell **)a))->r - (*((Cell **)b))->r;
 	}
 
+	// Ordenando de acordo com a quantidade de possibilidades.
 	return (*((Cell **)b))->n - (*((Cell **)a))->n;
 }
 
-void print_cell(const void *a){
-	Cell *c = *(Cell **)a;
-
-	printf("(%d, %d) - %d", c->x, c->y, c->n);
-}
-
+/* Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
 void greater_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
+	// Se for uma casa vazia.
 	if (!cell->value){
 		// Para todos os valores maiores do que value.
 		for (i = value + 1; i <= b->d; i++){
@@ -49,18 +54,26 @@ void greater_constraint(Cell *cell, int value, int step){
 			}
 		}
 
+		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			}
 		}
 	}
 }
 
+/* Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
 void lesser_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
+	// Se for uma casa vazia.
 	if (!cell->value){
-		// Para todos os valores maiores do que value.
+		// Para todos os valores menores do que value.
 		for (i = value - 1; i >= 1; i--){
 			// Removendo i das possibilidades.
 			prev = cell->possibility[i];
@@ -74,15 +87,23 @@ void lesser_constraint(Cell *cell, int value, int step){
 			}
 		}
 
+		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			}
 		}
 	}
 }
 
+// Elimina o valor value das possibilidades da casa cell.
 void equal_constraint(Cell *cell, int value, int step){
 	int prev, cur;
 
+	// Se for uma casa vazia.
 	if (!cell->value){
 		prev = cell->possibility[value];
 		cell->possibility[value] += step;
@@ -90,13 +111,14 @@ void equal_constraint(Cell *cell, int value, int step){
 
 		// Se foi de 0 para 1 ou 1 para 0.
 		if ((prev and !cur) or (!prev and cur)){
-			// printf("Atualizando possibilidade do %d na casa (%d, %d)\n", value, cell->x, cell->y);
 			cell->n -= step;
 
-			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-
-			// priority_queue_print(pq, print_cell);
-			// printf("\n");
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
+			}
 		}
 	}
 }
@@ -129,6 +151,7 @@ void change_possibilities(Cell *cell, int value, int step){
 }
 
 void update(Cell *cur, int value){
+	// Atualizando o valor da casa.
 	cur->value = value;
 
 	// Reduzindo as possibilidades.
@@ -136,6 +159,7 @@ void update(Cell *cur, int value){
 }
 
 void outdate(Cell *cur, int value){
+	// Removendo o antigo valor da casa.
 	cur->value = 0;
 
 	// Aumentando as possibilidades.
@@ -146,35 +170,45 @@ bool solve_recursively(){
 	Cell *cur;
 	int i;
 
-	if (priority_queue_empty(pq)){
+	// If Assignment is complete.
+	if ((MRV and priority_queue_empty(pq)) or (!MRV and queue_empty(q))){
 		return true;
 	}
 
-	cur = *(Cell **)priority_queue_top(pq);
-	priority_queue_pop(pq);
+	// Select Unassigned Variable.
+	if (MRV){
+		cur = *(Cell **)priority_queue_top(pq);
+		priority_queue_pop(pq);
+	}
+	else{
+		cur = *(Cell **)queue_front(q);
+		queue_pop(q);
+	}
 
-	// priority_queue_print(pq, print_cell);
-	print_board(b);
-	printf("\n");
-	printf("Var = (%d, %d) com %d possibilidades\n", cur->x, cur->y, cur->n);
-
+	// For each value in Order Domain Values.
 	for (i = 1; i <= b->d; i++){
+		// If value is consistent with Assignment according to Constraints.
 		if (!cur->possibility[i]){
+			// Add var = value to Assignment.
 			update(cur, i);
 
-			// priority_queue_print(pq, print_cell);
-
-			// return true;
-
+			// If Recursive Backtracking == success.
 			if (solve_recursively()){
 				return true;
 			}
 
+			// Remove var = value from Assignment.
 			outdate(cur, i);
 		}
 	}
 
-	b->ref[cur->x][cur->y] = priority_queue_push(pq, &cur);
+	// Insert variable back to the variables container.
+	if (MRV){
+		b->ref[cur->x][cur->y] = priority_queue_push(pq, &cur);
+	}
+	else{
+		b->ref[cur->x][cur->y] = queue_push(q, &cur);
+	}
 
 	return false;
 }
@@ -182,22 +216,43 @@ bool solve_recursively(){
 void solve(){
 	int i, j;
 
-	pq = priority_queue_new(sizeof(Cell *), cell_compare);
+	// Selecionando estrutura de dados de acordo com a heurística.
+	if (MRV){	
+		pq = priority_queue_new(sizeof(Cell *), cell_compare);
 
-	for (i = 0; i < b->d; i++){
-		for (j = 0; j < b->d; j++){
-			if (!b->cell[i][j]->value){
-				b->ref[i][j] = priority_queue_push(pq, b->cell[i] + j);
+		for (i = 0; i < b->d; i++){
+			for (j = 0; j < b->d; j++){
+				if (!b->cell[i][j]->value){
+					b->ref[i][j] = priority_queue_push(pq, b->cell[i] + j);
+				}
+			}
+		}
+	}
+	else{
+		q = queue_new(sizeof(Cell *));
+
+		for (i = 0; i < b->d; i++){
+			for (j = 0; j < b->d; j++){
+				if (!b->cell[i][j]->value){
+					b->ref[i][j] = queue_push(q, b->cell[i] + j);
+				}
 			}
 		}
 	}
 
+	// Chamando o Backtracking recursivo.
 	solve_recursively();
 
-	priority_queue_delete(pq);
+	if (MRV){
+		priority_queue_delete(pq);
+	}
+	else{
+		queue_delete(q);
+	}
 }
 
 int main(int argc, char *argv[]){
+	clock_t start, end;
 	int n, i;
 
 	scanf("%d", &n);
@@ -205,9 +260,6 @@ int main(int argc, char *argv[]){
 	for (i = 0; i < n; i++){
 		// Lendo o tabuleiro.
 		b = read_board();
-
-		// Gerando as possibilidades iniciais de cada casa.
-		generate_possibilities(b);
 
 		// Solucionando.
 		solve();
