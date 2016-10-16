@@ -1,7 +1,6 @@
 /* Victor Forbes - 9293394 */
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "utils.h"
@@ -129,16 +128,6 @@ PQNode *node_new(const void *value, int size, int pos){
 void node_delete(PQNode *n){
 	free(n->value);
 	free(n);
-}
-
-void priority_queue_print(PriorityQueue *pq, void (*print)(const void *)){
-	int i;
-
-	for (i = 0; i < pq->n; i++){
-		printf("%d) ", i);
-		print(pq->v[i]->value);
-		printf("\n");
-	}
 }
 
 /* --- Funções auxiliares --- */

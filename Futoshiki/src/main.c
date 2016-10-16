@@ -12,11 +12,14 @@ Board *b;
 Queue *q;
 PriorityQueue *pq;
 
-int cell_compare(const void *a, const void *b){
-	// Cell *x = *(Cell **)a;
-	// Cell *y = *(Cell **)b;
+// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
+int x_dir[] = {-1, 1, 0, 0};
+int y_dir[] = {0, 0, -1, 1};
 
-	// printf("Comparing (%d, %d) - %d with (%d, %d) - %d\n", x->x, x->y, x->n, y->x, y->y, y->n);
+int cell_compare(const void *a, const void *b){
+	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
+		return (*((Cell **)a))->r - (*((Cell **)b))->r;
+	}
 
 	return (*((Cell **)b))->n - (*((Cell **)a))->n;
 }
@@ -151,9 +154,9 @@ bool solve_recursively(){
 	priority_queue_pop(pq);
 
 	// priority_queue_print(pq, print_cell);
-	// print_board(b);
-	// printf("\n");
-	// printf("Var = (%d, %d) com %d possibilidades\n", cur->x, cur->y, cur->n);
+	print_board(b);
+	printf("\n");
+	printf("Var = (%d, %d) com %d possibilidades\n", cur->x, cur->y, cur->n);
 
 	for (i = 1; i <= b->d; i++){
 		if (!cur->possibility[i]){

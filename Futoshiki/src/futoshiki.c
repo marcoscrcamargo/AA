@@ -13,6 +13,10 @@ void free_cell(Cell *);
 
 int relative_position(int, int, int, int);
 
+// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
+int x_step[] = {-1, 1, 0, 0};
+int y_step[] = {0, 0, -1, 1};
+
 Board *read_board(){
 	int d, r, i, j, x1, y1, x2, y2;
 	Board *b;
@@ -34,8 +38,11 @@ Board *read_board(){
 	for (i = 0; i < r; i++){
 		scanf("%d%d%d%d", &x1, &y1, &x2, &y2);
 
-		// Gravando desigualdade.
+		// Gravando desigualdades.
+		b->cell[x1 - 1][y1 - 1]->r++;
 		b->cell[x1 - 1][y1 - 1]->lesser[relative_position(x1, y1, x2, y2)] = true;
+
+		b->cell[x2 - 1][y2 - 1]->r++;
 		b->cell[x2 - 1][y2 - 1]->greater[relative_position(x2, y2, x1, y1)] = true;
 	}
 
@@ -51,17 +58,30 @@ int g_dfs(Board *b, int **g_chain, int x, int y){
 
 	for (i = 0; i < 4; i++){
 		if (b->cell[x][y]->greater[i]){
-			g_chain[x][y] = max(g_chain[x][y], g_dfs(b, g_chain, x + x_dir[i], y + y_dir[i]));
+			g_chain[x][y] = max(g_chain[x][y], g_dfs(b, g_chain, x + x_step[i], y + y_step[i]));
 		}
 	}
 
 	return g_chain[x][y] + 1;
 }
 
+int l_dfs(Board *b, int **l_chain, int x, int y){
+	int i;
+
+	for (i = 0; i < 4; i++){
+		if (b->cell[x][y]->lesser[i]){
+			l_chain[x][y] = max(l_chain[x][y], l_dfs(b, l_chain, x + x_step[i], y + y_step[i]));
+		}
+	}
+
+	return l_chain[x][y] + 1;
+}
+
 void check_chains(Board *b){
 	int **g_chain, **l_chain;
-	int i, j;
+	int i, j, k;
 
+	// Alocando matrizes greater e lesser.
 	g_chain = (int **)malloc(b->d * sizeof(int *));
 	l_chain = (int **)malloc(b->d * sizeof(int *));
 
@@ -70,21 +90,42 @@ void check_chains(Board *b){
 		l_chain[i] = (int *)calloc(b->d, sizeof(int));
 	}
 
+	// Rodando uma dfs para as matrizes.
 	for (i = 0; i < b->d; i++){
 		for (j = 0; j < b->d; j++){
 			if (!g_chain[i][j]){
 				g_dfs(b, g_chain, i, j);
 			}
+
+			if (!l_chain[i][j]){
+				l_dfs(b, l_chain, i, j);
+			}
 		}
 	}
 
+	// Reduzindo as possibilidades.
 	for (i = 0; i < b->d; i++){
 		for (j = 0; j < b->d; j++){
-			printf("%d ", g_chain[i][j]);
-		}
+			for (k = 0; k < g_chain[i][j]; k++){
+				b->cell[i][j]->possibility[k + 1] = 1;
+				b->cell[i][j]->n--;
+			}
 
-		printf("\n");
+			for (k = 0; k < l_chain[i][j]; k++){
+				b->cell[i][j]->possibility[b->d - k] = 1;
+				b->cell[i][j]->n--;
+			}
+		}
 	}
+
+	// Liberando as matrizes.
+	for (i = 0; i < b->d; i++){
+		free(g_chain[i]);
+		free(l_chain[i]);
+	}
+
+	free(g_chain);
+	free(l_chain);
 }
 
 void generate_possibilities(Board *b){
@@ -182,6 +223,7 @@ Cell *create_cell(int x, int y, int d){
 	c->greater = (bool *)calloc(4, sizeof(bool));
 	c->lesser = (bool *)calloc(4, sizeof(bool));
 	c->value = 0;
+	c->r = 0;
 	c->x = x;
 	c->y = y;
 	c->n = d;
