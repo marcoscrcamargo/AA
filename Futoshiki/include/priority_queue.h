@@ -24,4 +24,7 @@ bool priority_queue_empty(const PriorityQueue *);
 
 void priority_queue_delete(PriorityQueue *);
 
+// Aux
+void priority_queue_print(PriorityQueue *, void (*)(const void *));
+
 #endif

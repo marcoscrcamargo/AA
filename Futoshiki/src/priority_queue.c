@@ -1,6 +1,7 @@
 /* Victor Forbes - 9293394 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "utils.h"
@@ -59,16 +60,15 @@ PQNode *priority_queue_push(PriorityQueue *pq, const void *x){
 }
 
 void priority_queue_replace(PriorityQueue *pq, PQNode *ref, const void *x){
-	if (pq->compare(x, ref->value) < 0){
-		memcpy(ref->value, x, pq->size);
-		priority_queue_decrease(pq, ref);
-	}
-	else if (pq->compare(ref->value, x) < 0){
-		memcpy(ref->value, x, pq->size);
+	int pos = ref->pos;
+
+	memcpy(ref->value, x, pq->size);
+
+	if (pos > 0 and pq->compare(pq->v[parent(pos)]->value, x) < 0){
 		priority_queue_increase(pq, ref);
 	}
 	else{
-		memcpy(ref->value, x, pq->size);
+		priority_queue_decrease(pq, ref);
 	}
 }
 
@@ -129,6 +129,16 @@ PQNode *node_new(const void *value, int size, int pos){
 void node_delete(PQNode *n){
 	free(n->value);
 	free(n);
+}
+
+void priority_queue_print(PriorityQueue *pq, void (*print)(const void *)){
+	int i;
+
+	for (i = 0; i < pq->n; i++){
+		printf("%d) ", i);
+		print(pq->v[i]->value);
+		printf("\n");
+	}
 }
 
 /* --- Funções auxiliares --- */
