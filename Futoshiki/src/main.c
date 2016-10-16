@@ -23,6 +23,9 @@ bool MRV = true;
 bool FORWARD_CHECKING = true;
 bool INSERT_IN_QUEUE;
 
+Cell *Breakpoint;
+bool INEQUALITY_BREAKPOINT;
+
 /* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
 	// Desempatando pela quantidade de desigualdades que envolvem a casa.
@@ -68,6 +71,10 @@ bool greater_constraint(Cell *cell, int value, int step){
 		}
 	}
 
+	if (cell == Breakpoint and INEQUALITY_BREAKPOINT){
+		return true;
+	}
+
 	return cell->n == 0;
 }
 
@@ -105,6 +112,10 @@ bool lesser_constraint(Cell *cell, int value, int step){
 		}
 	}
 
+	if (cell == Breakpoint and INEQUALITY_BREAKPOINT){
+		return true;
+	}
+
 	return cell->n == 0;
 }
 
@@ -133,6 +144,10 @@ bool equal_constraint(Cell *cell, int value, int step){
 		}
 	}
 
+	if (cell == Breakpoint and !INEQUALITY_BREAKPOINT){
+		return true;
+	}
+
 	return cell->n == 0;
 }
 
@@ -146,6 +161,8 @@ bool change_possibilities(Cell *cell, int value, int step){
 			fc = fc or greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
 
 			if (FORWARD_CHECKING and fc){
+				Breakpoint = b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]];
+				INEQUALITY_BREAKPOINT = true;
 				return false;
 			}
 		}
@@ -155,6 +172,8 @@ bool change_possibilities(Cell *cell, int value, int step){
 			fc = fc or lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
 
 			if (FORWARD_CHECKING and fc){
+				Breakpoint = b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]];
+				INEQUALITY_BREAKPOINT = true;
 				return false;
 			}
 		}
@@ -166,6 +185,8 @@ bool change_possibilities(Cell *cell, int value, int step){
 			fc = fc or equal_constraint(b->cell[cell->x][i], value, step);
 
 			if (FORWARD_CHECKING and fc){
+				Breakpoint = b->cell[cell->x][i];
+				INEQUALITY_BREAKPOINT = false;
 				return false;
 			}
 		}
@@ -174,6 +195,8 @@ bool change_possibilities(Cell *cell, int value, int step){
 			fc = fc or equal_constraint(b->cell[i][cell->y], value, step);
 
 			if (FORWARD_CHECKING and fc){
+				Breakpoint = b->cell[i][cell->y];
+				INEQUALITY_BREAKPOINT = false;
 				return false;
 			}
 		}
@@ -185,6 +208,8 @@ bool change_possibilities(Cell *cell, int value, int step){
 bool update(Cell *cur, int value){
 	// Atualizando o valor da casa.
 	cur->value = value;
+
+	Breakpoint = NULL;
 
 	// Reduzindo as possibilidades.
 	return change_possibilities(cur, value, 1);
