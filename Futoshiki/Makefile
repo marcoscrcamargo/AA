@@ -58,13 +58,22 @@ $(BDIR)/%.o: $(SDIR)/%.c
 
 # Creates the dependences
 $(BDIR)/%.d: $(SDIR)/%.c $(BDIR)
-	$(CC) $(_CFLAGS) -MM -MT '$@ $(<:%.c=%.o)' $< > $@
+	@ $(CC) $(_CFLAGS) -MM -MT '$@ $(<:%.c=%.o)' $< > $@
 
-run: $(BDIR)/$(BIN)
-	@ $(RUNFLAGS) ./bin/main
+run: $(BIN)
+	$(RUNFLAGS) ./bin/main
+
+h1: $(BIN)
+	$(RUNFLAGS) ./bin/main 1
+
+h2: $(BIN)
+	$(RUNFLAGS) ./bin/main 2
+
+h3: $(BIN)
+	$(RUNFLAGS) ./bin/main 3
 
 zip: clean
-	@ zip -r $(ZIPNAME).zip ./*
+	zip -r $(ZIPNAME).zip ./*
 
 $(BDIR):
 	mkdir $(BDIR)
