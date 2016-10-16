@@ -2,12 +2,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include <time.h>
 
 #include "utils.h"
 #include "queue.h"
 #include "priority_queue.h"
 #include "futoshiki.h"
+
+#define MAX_OPERATIONS 1000000 // 10^6
 
 // Variáveis globais.
 Board *b;
@@ -21,10 +24,9 @@ const int y_dir[] = {0, 0, -1, 1};
 // Heurísticas.
 bool MRV = true;
 bool FORWARD_CHECKING = true;
-bool INSERT_IN_QUEUE;
 
-Cell *Breakpoint;
-bool INEQUALITY_BREAKPOINT;
+// Contador de atribuições feitas.
+int operation_counter;
 
 /* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
@@ -38,7 +40,7 @@ int cell_compare(const void *a, const void *b){
 }
 
 /* Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
-bool greater_constraint(Cell *cell, int value, int step){
+void greater_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
@@ -60,26 +62,18 @@ bool greater_constraint(Cell *cell, int value, int step){
 
 		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			if (INSERT_IN_QUEUE){
-				if (MRV){
-					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-				}
-				else{
-					queue_replace(q, b->ref[cell->x][cell->y], &cell);
-				}
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
 			}
 		}
 	}
-
-	if (cell == Breakpoint and INEQUALITY_BREAKPOINT){
-		return true;
-	}
-
-	return cell->n == 0;
 }
 
 /* Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
-bool lesser_constraint(Cell *cell, int value, int step){
+void lesser_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
 
@@ -101,26 +95,18 @@ bool lesser_constraint(Cell *cell, int value, int step){
 
 		// Se tiver atualizado a quantidade de possibilidades dessa casa.
 		if (updated){
-			if (INSERT_IN_QUEUE){
-				if (MRV){
-					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-				}
-				else{
-					queue_replace(q, b->ref[cell->x][cell->y], &cell);
-				}
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
 			}
 		}
 	}
-
-	if (cell == Breakpoint and INEQUALITY_BREAKPOINT){
-		return true;
-	}
-
-	return cell->n == 0;
 }
 
 // Elimina o valor value das possibilidades da casa cell.
-bool equal_constraint(Cell *cell, int value, int step){
+void equal_constraint(Cell *cell, int value, int step){
 	int prev, cur;
 
 	// Se for uma casa vazia.
@@ -133,86 +119,49 @@ bool equal_constraint(Cell *cell, int value, int step){
 		if ((prev and !cur) or (!prev and cur)){
 			cell->n -= step;
 
-			if (INSERT_IN_QUEUE){
-				if (MRV){
-					priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-				}
-				else{
-					queue_replace(q, b->ref[cell->x][cell->y], &cell);
-				}
+			if (MRV){
+				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			}
+			else{
+				queue_replace(q, b->ref[cell->x][cell->y], &cell);
 			}
 		}
 	}
-
-	if (cell == Breakpoint and !INEQUALITY_BREAKPOINT){
-		return true;
-	}
-
-	return cell->n == 0;
 }
 
-bool change_possibilities(Cell *cell, int value, int step){
-	bool fc = false;
+void change_possibilities(Cell *cell, int value, int step){
 	int i;
 
 	for (i = 0; i < 4; i++){
 		// Impondo restrições de >.
 		if (cell->greater[i]){
-			fc = fc or greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
-
-			if (FORWARD_CHECKING and fc){
-				Breakpoint = b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]];
-				INEQUALITY_BREAKPOINT = true;
-				return false;
-			}
+			greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
 		}
 
 		// Impondo restrições de <.
 		if (cell->lesser[i]){
-			fc = fc or lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
-
-			if (FORWARD_CHECKING and fc){
-				Breakpoint = b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]];
-				INEQUALITY_BREAKPOINT = true;
-				return false;
-			}
+			lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
 		}
 	}
 
 	// Impondo restrições estilo Sudoku.
 	for (i = 0; i < b->d; i++){
 		if (i != cell->y){
-			fc = fc or equal_constraint(b->cell[cell->x][i], value, step);
-
-			if (FORWARD_CHECKING and fc){
-				Breakpoint = b->cell[cell->x][i];
-				INEQUALITY_BREAKPOINT = false;
-				return false;
-			}
+			equal_constraint(b->cell[cell->x][i], value, step);
 		}
 
 		if (i != cell->x){
-			fc = fc or equal_constraint(b->cell[i][cell->y], value, step);
-
-			if (FORWARD_CHECKING and fc){
-				Breakpoint = b->cell[i][cell->y];
-				INEQUALITY_BREAKPOINT = false;
-				return false;
-			}
+			equal_constraint(b->cell[i][cell->y], value, step);
 		}
 	}
-
-	return true;
 }
 
-bool update(Cell *cur, int value){
+void update(Cell *cur, int value){
 	// Atualizando o valor da casa.
 	cur->value = value;
 
-	Breakpoint = NULL;
-
 	// Reduzindo as possibilidades.
-	return change_possibilities(cur, value, 1);
+	change_possibilities(cur, value, 1);
 }
 
 void outdate(Cell *cur, int value){
@@ -221,6 +170,111 @@ void outdate(Cell *cur, int value){
 
 	// Aumentando as possibilidades.
 	change_possibilities(cur, value, -1);
+}
+
+bool check_greater(Cell *cell, int value){
+	int i, n;
+
+	// Se for uma casa vazia.
+	if (!cell->value){
+		n = cell->n;
+
+		// Para todos os valores maiores do que value.
+		for (i = value; i <= b->d; i++){
+			// Removendo i das possibilidades.
+			if (cell->possibility[i] == 0){
+				n--;
+			}
+		}
+
+		return n == 0;
+	}
+
+	return false;
+}
+
+bool check_lesser(Cell *cell, int value){
+	int i, n;
+
+	// Se for uma casa vazia.
+	if (!cell->value){
+		n = cell->n;
+
+		// Para todos os valores maiores do que value.
+		for (i = value; i >= 1; i--){
+			// Removendo i das possibilidades.
+			if (cell->possibility[i] == 0){
+				n--;
+			}
+		}
+
+		return n == 0;
+	}
+
+	return false;
+}
+
+bool check_equal(Cell *cell, int value){
+	int n;
+
+	// Se for uma casa vazia.
+	if (!cell->value){
+		n = cell->n;
+
+		if (cell->possibility[value] == 0){
+			n--;
+		}
+
+		return n == 0;
+	}
+
+	return false;
+}
+
+bool check(Cell *cell, int value){
+	bool fc = false;
+	int i;
+
+	for (i = 0; i < 4; i++){
+		// Impondo restrições de >.
+		if (cell->greater[i]){
+			fc = fc or check_greater(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value);
+
+			if (fc){
+				return true;
+			}
+		}
+
+		// Impondo restrições de <.
+		if (cell->lesser[i]){
+			fc = fc or check_lesser(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value);
+
+			if (fc){
+				return true;
+			}
+		}
+	}
+
+	// Impondo restrições estilo Sudoku.
+	for (i = 0; i < b->d; i++){
+		if (i != cell->y){
+			fc = fc or check_equal(b->cell[cell->x][i], value);
+
+			if (fc){
+				return true;
+			}
+		}
+
+		if (i != cell->x){
+			fc = fc or check_equal(b->cell[i][cell->y], value);
+
+			if (fc){
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 bool solve_recursively(){
@@ -246,19 +300,25 @@ bool solve_recursively(){
 	for (i = 1; i <= b->d; i++){
 		// If value is consistent with Assignment according to Constraints.
 		if (!cur->possibility[i]){
-			// Add var = value to Assignment.
-
+			// Fazendo a verificação adiante.
 			if (FORWARD_CHECKING){
-				INSERT_IN_QUEUE = false;
-
-				if (update(cur, i) == false){
+				if (check(cur, i)){
 					continue;
 				}
-
-				INSERT_IN_QUEUE = true;
 			}
 
+			// Add var = value to Assignment.
 			update(cur, i);
+
+			// Incrementando o número de atribuições.
+			operation_counter++;
+
+			// Caso o número de atribuições tenha excedido o máximo permitido.
+			if (operation_counter > MAX_OPERATIONS){
+				outdate(cur, i);
+				printf("Numero de atribuicoes excede limite maximo\n");
+				return true;
+			}
 
 			// If Recursive Backtracking == success.
 			if (solve_recursively()){
@@ -283,6 +343,8 @@ bool solve_recursively(){
 
 void solve(){
 	int i, j;
+
+	operation_counter = 0;
 
 	// Selecionando estrutura de dados de acordo com a heurística.
 	if (MRV){	
@@ -345,7 +407,7 @@ int main(int argc, char *argv[]){
 	clock_t start, end;
 	int n, i;
 
-	scanf("%d", &n);
+	assert(scanf("%d", &n) == 1);
 
 	for (i = 0; i < n; i++){
 		start = clock();
