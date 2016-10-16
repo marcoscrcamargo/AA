@@ -16,7 +16,23 @@ PriorityQueue *pq;
 int x_dir[] = {-1, 1, 0, 0};
 int y_dir[] = {0, 0, -1, 1};
 
+int cell_compare(const void *a, const void *b){
+	// Cell *x = *(Cell **)a;
+	// Cell *y = *(Cell **)b;
+
+	// printf("Comparing (%d, %d) - %d with (%d, %d) - %d\n", x->x, x->y, x->n, y->x, y->y, y->n);
+
+	return (*((Cell **)b))->n - (*((Cell **)a))->n;
+}
+
+void print_cell(const void *a){
+	Cell *c = *(Cell **)a;
+
+	printf("(%d, %d) - %d", c->x, c->y, c->n);
+}
+
 void greater_constraint(Cell *cell, int value, int step){
+	bool updated = false;
 	int i, prev, cur;
 
 	if (!cell->value){
@@ -30,14 +46,18 @@ void greater_constraint(Cell *cell, int value, int step){
 			// Se foi de 0 para 1 ou 1 para 0.
 			if ((prev and !cur) or (!prev and cur)){
 				cell->n -= step;
+				updated = true;
 			}
+		}
 
+		if (updated){
 			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
 		}
 	}
 }
 
 void lesser_constraint(Cell *cell, int value, int step){
+	bool updated = false;
 	int i, prev, cur;
 
 	if (!cell->value){
@@ -51,8 +71,11 @@ void lesser_constraint(Cell *cell, int value, int step){
 			// Se foi de 0 para 1 ou 1 para 0.
 			if ((prev and !cur) or (!prev and cur)){
 				cell->n -= step;
+				updated = true;
 			}
+		}
 
+		if (updated){
 			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
 		}
 	}
@@ -68,10 +91,14 @@ void equal_constraint(Cell *cell, int value, int step){
 
 		// Se foi de 0 para 1 ou 1 para 0.
 		if ((prev and !cur) or (!prev and cur)){
+			// printf("Atualizando possibilidade do %d na casa (%d, %d)\n", value, cell->x, cell->y);
 			cell->n -= step;
-		}
 
-		priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+			priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
+
+			// priority_queue_print(pq, print_cell);
+			// printf("\n");
+		}
 	}
 }
 
@@ -116,10 +143,6 @@ void outdate(Cell *cur, int value){
 	change_possibilities(cur, value, -1);
 }
 
-int cell_compare(const void *a, const void *b){
-	return (*((Cell **)b))->n - (*((Cell **)a))->n;
-}
-
 bool solve_recursively(){
 	Cell *cur;
 	int i;
@@ -131,14 +154,18 @@ bool solve_recursively(){
 	cur = *(Cell **)priority_queue_top(pq);
 	priority_queue_pop(pq);
 
+	// priority_queue_print(pq, print_cell);
 	// print_board(b);
 	// printf("\n");
-
 	// printf("Var = (%d, %d) com %d possibilidades\n", cur->x, cur->y, cur->n);
 
 	for (i = 1; i <= b->d; i++){
 		if (!cur->possibility[i]){
 			update(cur, i);
+
+			// priority_queue_print(pq, print_cell);
+
+			// return true;
 
 			if (solve_recursively()){
 				return true;
