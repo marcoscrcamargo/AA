@@ -25,9 +25,9 @@ bool FORWARD_CHECKING = false;
 /* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
 	// Desempatando pela quantidade de desigualdades que envolvem a casa.
-	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
+	/*if ((*((Cell **)a))->n == (*((Cell **)b))->n){
 		return (*((Cell **)a))->r - (*((Cell **)b))->r;
-	}
+	}*/
 
 	// Ordenando de acordo com a quantidade de possibilidades.
 	return (*((Cell **)b))->n - (*((Cell **)a))->n;
@@ -258,19 +258,24 @@ int main(int argc, char *argv[]){
 	scanf("%d", &n);
 
 	for (i = 0; i < n; i++){
+		start = clock();
+
 		// Lendo o tabuleiro.
 		b = read_board();
 
 		// Solucionando.
 		solve();
 
+		end = clock();
+
 		// Imprimindo a solução.
-		printf("%d)\n", i + 1);
+		printf("%.3lfs - %d)\n", (double)(end - start) / CLOCKS_PER_SEC, i + 1);
 		print_board(b);
 		printf("\n");
 
 		// Liberando o tabuleiro.
 		free_board(b);
+
 	}
 
 	return 0;
