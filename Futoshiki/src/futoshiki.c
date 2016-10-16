@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "utils.h"
 #include "futoshiki.h"
@@ -39,7 +40,7 @@ Board *read_board(){
 	Board *b;
 
 	// Lendo a dimensão da matriz e o número de desigualdades.
-	scanf("%d%d", &d, &r);
+	assert(scanf("%d%d", &d, &r) == 2);
 
 	// Alocando um tabuleiro de dimensão d vazio.
 	b = create_board(d);
@@ -47,13 +48,13 @@ Board *read_board(){
 	// Lendo os valores do tabuleiro.
 	for (i = 0; i < d; i++){
 		for (j = 0; j < d; j++){
-			scanf("%d", &b->cell[i][j]->value);
+			assert(scanf("%d", &b->cell[i][j]->value) == 1);
 		}
 	}
 
 	// Lendo as desigualdades.
 	for (i = 0; i < r; i++){
-		scanf("%d%d%d%d", &x1, &y1, &x2, &y2);
+		assert(scanf("%d%d%d%d", &x1, &y1, &x2, &y2) == 4);
 
 		// Gravando desigualdades.
 		c1 = b->cell[x1 - 1][y1 - 1];
