@@ -18,51 +18,65 @@
 
 # Defining variables
 
+# Includes directory
 IDIR = ./include
 
-SDIR = ./src
+# Source directory
+SRCDIR = ./src
 
-BDIR = ./bin
+# Binaries directory
+BINDIR = ./bin
 
+# Compiler
 CC = gcc
 
+# Frags to compiler
 _CFLAGS = -I$(IDIR) -Wall -O2
 
+# Aditional frags to compiler (can be defined by user)
 CFLAGS = 
 
-SRC = $(wildcard $(SDIR)/*.c)
+# Source files in SRCDIR
+SRC = $(wildcard $(SRCDIR)/*.c)
 
-# Generate .o object files rules
-OBJECTS = $(foreach file, $(SRC), $(file:$(SDIR)/%.c=$(BDIR)/%.o))
+# Generate .o object files
+OBJECTS = $(foreach file, $(SRC), $(file:$(SRCDIR)/%.c=$(BINDIR)/%.o))
 
+# Main file name
 BIN = main
 
+# Zip name
 ZIPNAME = futoshiki
 
+# Aditional lib frags to compiler (can be defined by user)
 LIBS = 
 
+# Verifying that debugging is set
 ifdef debug
 	CFLAGS = -g
 	RUNFLAGS = valgrind -v --track-origins=yes --leak-check=full
 endif
 
-all: $(BDIR) $(BIN)
+# General make
+all: $(BINDIR) $(BIN)
 
 # Generates the executable 
 $(BIN): $(OBJECTS) 
-	$(CC) $(_CFLAGS) $(LIBS) $^ -o $(BDIR)/$@ $(CFLAGS)
+	$(CC) $(_CFLAGS) $(LIBS) $^ -o $(BINDIR)/$@ $(CFLAGS)
 
 # Generates the objects
-$(BDIR)/%.o: $(SDIR)/%.c
+$(BINDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(_CFLAGS) $(LIBS) $< -c -o $@ $(CFLAGS)
 
 # Creates the dependences
-$(BDIR)/%.d: $(SDIR)/%.c $(BDIR)
+$(BINDIR)/%.d: $(SRCDIR)/%.c $(BINDIR)
 	@ $(CC) $(_CFLAGS) -MM -MT '$@ $(<:%.c=%.o)' $< > $@
 
+# Run
 run: $(BIN)
 	$(RUNFLAGS) ./bin/main
 
+# Run with heuristics
 h1: $(BIN)
 	$(RUNFLAGS) ./bin/main 1
 
@@ -75,8 +89,8 @@ h3: $(BIN)
 zip: clean
 	zip -r $(ZIPNAME).zip ./*
 
-$(BDIR):
-	mkdir $(BDIR)
+$(BINDIR):
+	mkdir $(BINDIR)
 
 # Cleans working directory.
 .PHONY: clean
