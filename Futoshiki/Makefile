@@ -26,7 +26,7 @@ BDIR = ./bin
 
 CC = gcc
 
-_CFLAGS = -I$(IDIR) -Wall
+_CFLAGS = -I$(IDIR) -Wall -O2
 
 CFLAGS = 
 
