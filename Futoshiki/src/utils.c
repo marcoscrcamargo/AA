@@ -8,6 +8,7 @@
 void swap(void *a, void *b, int size){
 	void *c;
 
+	// Se forem regiões da memória diferentes.
 	if (a != b){
 		c = malloc(size);
 
@@ -17,4 +18,8 @@ void swap(void *a, void *b, int size){
 
 		free(c);
 	}
+}
+
+int max(int a, int b){
+	return a > b ? a : b;
 }

@@ -18,7 +18,7 @@
 
 # Defining variables
 
-IDIR = ./includes
+IDIR = ./include
 
 SDIR = ./src
 

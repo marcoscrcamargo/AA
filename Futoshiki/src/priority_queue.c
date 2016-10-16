@@ -6,33 +6,38 @@
 #include "utils.h"
 #include "priority_queue.h"
 
-#define parent(x) ((x - 1) / 2)
-#define left_child(x) (2 * x + 1)
-#define right_child(x) (2 * x + 2)
+#define parent(x) ((x - 1) / 2) // Pai da posição x.
+#define left_child(x) (2 * x + 1) // Filho da esquerda da posição x.
+#define right_child(x) (2 * x + 2) // Filho da direita da posição x.
 
 struct PQNode{
-	int pos;
-	void *value;
+	int pos; // Posição no vetor da Heap.
+	void *value; // Valor armazenado.
 };
 
 struct PriorityQueue{
-	int n;
-	int size;
-	PQNode **v;
-	int (*compare)(const void *, const void *);
+	int n; // Número de elementos.
+	int size; // Tamanho de cada elemento.
+	PQNode **v; // Vetor de nós.
+	int (*compare)(const void *, const void *); // Função de comparação.
 };
 
+// Aumentando o nó ref de posição na Heap.
 void priority_queue_increase(PriorityQueue *, PQNode *);
 
+// Reduzindo o nó ref de posição na Heap.
 void priority_queue_decrease(PriorityQueue *, PQNode *);
 
+// Criando um novo nó.
 PQNode *node_new(const void *, int, int);
 
+// Deletando um nó.
 void node_delete(PQNode *);
 
 PriorityQueue *priority_queue_new(int size, int (*compare)(const void *, const void *)){
 	PriorityQueue *pq = (PriorityQueue *)malloc(sizeof(PriorityQueue));
 
+	// Inicializando.
 	pq->n = 0;
 	pq->v = NULL;
 	pq->size = size;
@@ -61,8 +66,10 @@ PQNode *priority_queue_push(PriorityQueue *pq, const void *x){
 void priority_queue_replace(PriorityQueue *pq, PQNode *ref, const void *x){
 	int pos = ref->pos;
 
+	// Substituindo o elemento.
 	memcpy(ref->value, x, pq->size);
 
+	// Subindo ou descendo o novo elemento.
 	if (pos > 0 and pq->compare(pq->v[parent(pos)]->value, x) < 0){
 		priority_queue_increase(pq, ref);
 	}
@@ -114,6 +121,8 @@ void priority_queue_delete(PriorityQueue *pq){
 	free(pq);
 }
 
+/* --- Funções auxiliares --- */
+
 PQNode *node_new(const void *value, int size, int pos){
 	PQNode *n = (PQNode *)malloc(sizeof(PQNode));
 
@@ -129,8 +138,6 @@ void node_delete(PQNode *n){
 	free(n->value);
 	free(n);
 }
-
-/* --- Funções auxiliares --- */
 
 void priority_queue_increase(PriorityQueue *pq, PQNode *ref){
 	int pos = ref->pos;
