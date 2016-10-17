@@ -863,6 +863,7 @@ Numero de atribuicoes excede limite maximo
 
 O numero total de falhas foi 1
 
-real	1m34.937s
-user	1m34.797s
+real	1m20.288s
+user	1m20.217s
 sys	0m0.013s
+
