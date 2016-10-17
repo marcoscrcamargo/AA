@@ -1,4 +1,4 @@
-/*Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
+/* Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
 
 This file is part of Futoshiki.
 
@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>.*/
+along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
 #include <stdio.h>

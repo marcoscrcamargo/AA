@@ -1,4 +1,4 @@
-/*Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
+/* Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
 
 This file is part of Futoshiki.
 
@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>.*/
+along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,14 +27,17 @@ along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #define MAX_OPERATIONS 1000000 // 10^6
 
+// Defines auxiliares para as direções.
+#define X 0
+#define Y 1
+
+// Matriz auxiliar para direções UP, DOWN, LEFT e RIGHT.
+const int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
 // Variáveis globais.
 Board *b;
 Queue *q;
 PriorityQueue *pq;
-
-// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
-const int x_dir[] = {-1, 1, 0, 0};
-const int y_dir[] = {0, 0, -1, 1};
 
 // Heurísticas.
 bool MRV = true;
@@ -54,7 +57,7 @@ int cell_compare(const void *a, const void *b){
 	return (*((Cell **)b))->n - (*((Cell **)a))->n;
 }
 
-/* Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
+/* O(D) - Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
 void greater_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
@@ -87,7 +90,7 @@ void greater_constraint(Cell *cell, int value, int step){
 	}
 }
 
-/* Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
+/* O(D) - Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
 void lesser_constraint(Cell *cell, int value, int step){
 	bool updated = false;
 	int i, prev, cur;
@@ -120,7 +123,7 @@ void lesser_constraint(Cell *cell, int value, int step){
 	}
 }
 
-// Elimina o valor value das possibilidades da casa cell.
+/* O(D) - Elimina o valor value das possibilidades da casa cell. */
 void equal_constraint(Cell *cell, int value, int step){
 	int prev, cur;
 
@@ -144,18 +147,19 @@ void equal_constraint(Cell *cell, int value, int step){
 	}
 }
 
+/* O(D) - Muda as possibilidades dos vértices adjacentes. */
 void change_possibilities(Cell *cell, int value, int step){
 	int i;
 
 	for (i = 0; i < 4; i++){
 		// Impondo restrições de >.
 		if (cell->greater[i]){
-			greater_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+			greater_constraint(b->cell[cell->x + dir[i][X]][cell->y + dir[i][Y]], value, step);
 		}
 
 		// Impondo restrições de <.
 		if (cell->lesser[i]){
-			lesser_constraint(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value, step);
+			lesser_constraint(b->cell[cell->x + dir[i][X]][cell->y + dir[i][Y]], value, step);
 		}
 	}
 
@@ -171,6 +175,8 @@ void change_possibilities(Cell *cell, int value, int step){
 	}
 }
 
+
+/* O(D) - Atualiza as possibilidades dos vértices adjacentes. */
 void update(Cell *cur, int value){
 	// Atualizando o valor da casa.
 	cur->value = value;
@@ -179,6 +185,7 @@ void update(Cell *cur, int value){
 	change_possibilities(cur, value, 1);
 }
 
+/* O(D) - Desatualiza as possibilidades dos vértices adjacentes. */
 void outdate(Cell *cur, int value){
 	// Removendo o antigo valor da casa.
 	cur->value = 0;
@@ -187,6 +194,7 @@ void outdate(Cell *cur, int value){
 	change_possibilities(cur, value, -1);
 }
 
+/* O(D) - Função que verifica se uma casa ficará sem possibilidades pelo critério da maioridade. */
 bool check_greater(Cell *cell, int value){
 	int i, n;
 
@@ -208,6 +216,7 @@ bool check_greater(Cell *cell, int value){
 	return false;
 }
 
+/* O(D) - Função que verifica se uma casa ficará sem possibilidades pelo critério da menoridade. */
 bool check_lesser(Cell *cell, int value){
 	int i, n;
 
@@ -229,6 +238,7 @@ bool check_lesser(Cell *cell, int value){
 	return false;
 }
 
+/* O(1) - Função que verifica se uma casa ficará sem possibilidades pelo critério Sudoku. */
 bool check_equal(Cell *cell, int value){
 	int n;
 
@@ -246,6 +256,7 @@ bool check_equal(Cell *cell, int value){
 	return false;
 }
 
+/* O(D) - Função que verifica se alguma casa vazia ficará sem possibilidades de atribuição. */
 bool check(Cell *cell, int value){
 	bool fc = false;
 	int i;
@@ -253,7 +264,7 @@ bool check(Cell *cell, int value){
 	for (i = 0; i < 4; i++){
 		// Impondo restrições de >.
 		if (cell->greater[i]){
-			fc = fc or check_greater(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value);
+			fc = fc or check_greater(b->cell[cell->x + dir[i][X]][cell->y + dir[i][Y]], value);
 
 			if (fc){
 				return true;
@@ -262,7 +273,7 @@ bool check(Cell *cell, int value){
 
 		// Impondo restrições de <.
 		if (cell->lesser[i]){
-			fc = fc or check_lesser(b->cell[cell->x + x_dir[i]][cell->y + y_dir[i]], value);
+			fc = fc or check_lesser(b->cell[cell->x + dir[i][X]][cell->y + dir[i][Y]], value);
 
 			if (fc){
 				return true;
@@ -292,43 +303,51 @@ bool check(Cell *cell, int value){
 	return false;
 }
 
+/* O(1) - Função que seleciona uma casa vazia para ser preenchida. */
+Cell *select_unassigned_variable(){
+	Cell *cell;
+
+	if (MRV){
+		cell = *(Cell **)priority_queue_top(pq);
+		priority_queue_pop(pq);
+	}
+	else{
+		cell = *(Cell **)queue_front(q);
+		queue_pop(q);
+	}
+
+	return cell;
+}
+
+/* O((D^2) * log(D)) - Função recursiva que realiza o backtracking. */
 bool solve_recursively(){
 	Cell *cur;
 	int i;
 
-	// If Assignment is complete.
+	// O(1) - If Assignment is complete.
 	if ((MRV and priority_queue_empty(pq)) or (!MRV and queue_empty(q))){
 		return true;
 	}
 
-	// Select Unassigned Variable.
-	if (MRV){
-		cur = *(Cell **)priority_queue_top(pq);
-		priority_queue_pop(pq);
-	}
-	else{
-		cur = *(Cell **)queue_front(q);
-		queue_pop(q);
-	}
+	// O(1) - Select Unassigned Variable.
+	cur = select_unassigned_variable();
 
-	// For each value in Order Domain Values.
+	// O(D) - For each value in Order Domain Values.
 	for (i = 1; i <= b->d; i++){
-		// If value is consistent with Assignment according to Constraints.
+		// O(1) - If value is consistent with Assignment according to Constraints.
 		if (!cur->possibility[i]){
-			// Fazendo a verificação adiante.
-			if (FORWARD_CHECKING){
-				if (check(cur, i)){
-					continue;
-				}
+			// O(D) - Fazendo a verificação adiante.
+			if (FORWARD_CHECKING and check(cur, i)){
+				continue;
 			}
 
-			// Add var = value to Assignment.
+			// O(D * log(D)) - Add var = value to Assignment.
 			update(cur, i);
 
-			// Incrementando o número de atribuições.
+			// O(1) - Incrementando o número de atribuições.
 			operation_counter++;
 
-			// Caso o número de atribuições tenha excedido o máximo permitido.
+			// O(1) - Caso o número de atribuições tenha excedido o máximo permitido.
 			if (operation_counter > MAX_OPERATIONS){
 				outdate(cur, i);
 				printf("Numero de atribuicoes excede limite maximo\n");
@@ -340,12 +359,12 @@ bool solve_recursively(){
 				return true;
 			}
 
-			// Remove var = value from Assignment.
+			// O(D * log(D)) - Remove var = value from Assignment.
 			outdate(cur, i);
 		}
 	}
 
-	// Insert variable back to the variables container.
+	// O(log(D)) - Insert variable back to the variables container.
 	if (MRV){
 		b->ref[cur->x][cur->y] = priority_queue_push(pq, &cur);
 	}
@@ -356,6 +375,7 @@ bool solve_recursively(){
 	return false;
 }
 
+/* Função de inicialização para realizar o Backtracking. */
 void solve(){
 	int i, j;
 
@@ -397,30 +417,33 @@ void solve(){
 }
 
 int main(int argc, char *argv[]){
-	
-	if(argc > 1){
-		if(argv[1][0] < '1' or argv[1][0] > '3'){
-			printf("Incorrect use of function. Usage: ./main n, wherein n is a number from 1 to 3 representing with heuristic you wish to use.\n");
-			return 0;
-		}
-		int op = atoi(argv[1]);
-		if(op == 1){
-			MRV = false;
-			FORWARD_CHECKING = false;
-		} else if (op == 2){
-			FORWARD_CHECKING = true;
-			MRV = false;
-		} else if(op == 3){
-			MRV = true;
-			FORWARD_CHECKING = true;
-		} else {
-			printf("Incorrect use of function. Usage: ./main n, wherein n is a number from 1 to 3 representing with heuristic you wish to use.\n");
-			return 0;			
-		}
-	}
-
 	clock_t start, end;
 	int n, i;
+
+	/* Verificando argumentos passados pelo terminal. */
+	if (argc > 1){
+		if (argv[1][0] < '1' or argv[1][0] > '3'){
+			printf("Incorrect use of function. Usage: ./main n, where n is a number from 1 to 3 representing which heuristic you wish to use.\n");
+			return 0;
+		}
+
+		switch (argv[1][0]){
+			case '1':
+				MRV = false;
+				FORWARD_CHECKING = false;
+				break;
+			case '2':
+				FORWARD_CHECKING = true;
+				MRV = false;
+				break;
+			case '3':
+				MRV = true;
+				FORWARD_CHECKING = true;
+				break;
+			default:
+				break;
+		}
+	}
 
 	assert(scanf("%d", &n) == 1);
 
@@ -436,13 +459,12 @@ int main(int argc, char *argv[]){
 		end = clock();
 
 		// Imprimindo a solução.
-		printf("%.3lfs - %d)\n", (double)(end - start) / CLOCKS_PER_SEC, i + 1);
+		printf("%d / %.3lfs - %d)\n", operation_counter, (double)(end - start) / CLOCKS_PER_SEC, i + 1);
 		print_board(b);
 		printf("\n");
 
 		// Liberando o tabuleiro.
 		free_board(b);
-
 	}
 
 	return 0;

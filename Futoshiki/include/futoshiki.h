@@ -1,4 +1,4 @@
-/*Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
+/* Copyright © 2016 - Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
 
 This file is part of Futoshiki.
 
@@ -13,12 +13,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>.*/
+along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef FUTOSHIKI_H
 #define FUTOSHIKI_H
-
-#include "priority_queue.h"
 
 #define UP 0 // (-1, 0)
 #define DOWN 1 // (+1, 0)
@@ -39,7 +37,7 @@ struct Cell{
 };
 
 struct Board{
-	void ***ref; // Referência para os nós da Priority Queue.
+	void ***ref; // Referência para os nós da Priority Queue ou Queue.
 	Cell ***cell; // Matriz de casas do tabuleiro.
 	int d; // Dimensão do tabuleiro.
 };
