@@ -50,16 +50,6 @@ int operation_counter;
 int cell_compare(const void *a, const void *b){
 	// Desempatando pela quantidade de desigualdades que envolvem a casa.
 	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
-		// Desempatando pela coordenada x.
-		if ((*((Cell **)a))->r == (*((Cell **)b))->r){
-			// Desempatando pela coordenada y.
-			if ((*((Cell **)a))->x == (*((Cell **)b))->x){
-				return (*((Cell **)b))->y - (*((Cell **)a))->y;
-			}
-
-			return (*((Cell **)b))->x - (*((Cell **)a))->x;
-		}
-
 		return (*((Cell **)a))->r - (*((Cell **)b))->r;
 	}
 
