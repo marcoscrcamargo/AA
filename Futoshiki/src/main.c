@@ -21,8 +21,6 @@ along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 #include <time.h>
 
 #include "utils.h"
-#include "queue.h"
-#include "priority_queue.h"
 #include "futoshiki.h"
 
 #define MAX_OPERATIONS 1000000 // 10^6
@@ -36,8 +34,6 @@ const int dir[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
 // Variáveis globais.
 Board *b;
-Queue *q;
-PriorityQueue *pq;
 
 // Heurísticas.
 bool MRV = true;
@@ -50,16 +46,15 @@ int operation_counter;
 int cell_compare(const void *a, const void *b){
 	// Desempatando pela quantidade de desigualdades que envolvem a casa.
 	if ((*((Cell **)a))->n == (*((Cell **)b))->n){
-		return (*((Cell **)a))->r - (*((Cell **)b))->r;
+		return (*((Cell **)b))->r - (*((Cell **)a))->r;
 	}
 
 	// Ordenando de acordo com a quantidade de possibilidades.
-	return (*((Cell **)b))->n - (*((Cell **)a))->n;
+	return (*((Cell **)a))->n - (*((Cell **)b))->n;
 }
 
 /* O(D) - Elimina possíveis valores dado que uma casa de valor "value" é maior do que a casa "cell". */
 void greater_constraint(Cell *cell, int value, int step){
-	bool updated = false;
 	int i, prev, cur;
 
 	// Se for uma casa vazia.
@@ -74,17 +69,6 @@ void greater_constraint(Cell *cell, int value, int step){
 			// Se foi de 0 para 1 ou 1 para 0.
 			if ((prev and !cur) or (!prev and cur)){
 				cell->n -= step;
-				updated = true;
-			}
-		}
-
-		// Se tiver atualizado a quantidade de possibilidades dessa casa.
-		if (updated){
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
 			}
 		}
 	}
@@ -92,7 +76,6 @@ void greater_constraint(Cell *cell, int value, int step){
 
 /* O(D) - Elimina possíveis valores dado que uma casa de valor "value" é menor do que a casa "cell". */
 void lesser_constraint(Cell *cell, int value, int step){
-	bool updated = false;
 	int i, prev, cur;
 
 	// Se for uma casa vazia.
@@ -107,23 +90,12 @@ void lesser_constraint(Cell *cell, int value, int step){
 			// Se foi de 0 para 1 ou 1 para 0.
 			if ((prev and !cur) or (!prev and cur)){
 				cell->n -= step;
-				updated = true;
-			}
-		}
-
-		// Se tiver atualizado a quantidade de possibilidades dessa casa.
-		if (updated){
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
 			}
 		}
 	}
 }
 
-/* O(D) - Elimina o valor value das possibilidades da casa cell. */
+/* O(1) - Elimina o valor value das possibilidades da casa cell. */
 void equal_constraint(Cell *cell, int value, int step){
 	int prev, cur;
 
@@ -136,13 +108,6 @@ void equal_constraint(Cell *cell, int value, int step){
 		// Se foi de 0 para 1 ou 1 para 0.
 		if ((prev and !cur) or (!prev and cur)){
 			cell->n -= step;
-
-			if (MRV){
-				priority_queue_replace(pq, b->ref[cell->x][cell->y], &cell);
-			}
-			else{
-				queue_replace(q, b->ref[cell->x][cell->y], &cell);
-			}
 		}
 	}
 }
@@ -151,6 +116,7 @@ void equal_constraint(Cell *cell, int value, int step){
 void change_possibilities(Cell *cell, int value, int step){
 	int i;
 
+	// Impondo restrições de desigualdades.
 	for (i = 0; i < 4; i++){
 		// Impondo restrições de >.
 		if (cell->greater[i]){
@@ -174,7 +140,6 @@ void change_possibilities(Cell *cell, int value, int step){
 		}
 	}
 }
-
 
 /* O(D) - Atualiza as possibilidades dos vértices adjacentes. */
 void update(Cell *cur, int value){
@@ -303,45 +268,55 @@ bool check(Cell *cell, int value){
 	return false;
 }
 
-/* O(1) - Função que seleciona uma casa vazia para ser preenchida. */
+/* O(D^2) - Função que seleciona uma casa vazia para ser preenchida. */
 Cell *select_unassigned_variable(){
-	Cell *cell;
+	Cell *cell = NULL;
+	int i, j;
 
-	if (MRV){
-		cell = *(Cell **)priority_queue_top(pq);
-		priority_queue_pop(pq);
-	}
-	else{
-		cell = *(Cell **)queue_front(q);
-		queue_pop(q);
+	// Buscando alguma casa vazia.
+	for (i = 0; i < b->d; i++){
+		for (j = 0; j < b->d; j++){
+			if (!b->cell[i][j]->value){
+				if (MRV){
+					// Atualizando a casa vazia de mínimo número de possibilidades.
+					if (!cell or cell_compare(b->cell[i] + j, &cell) < 0){
+						cell = b->cell[i][j];
+					}
+				}
+				else{
+					// Retornando a primeira casa vazia.
+					return b->cell[i][j];
+				}
+			}
+		}
 	}
 
 	return cell;
 }
 
-/* O((D^2) * log(D)) - Função recursiva que realiza o backtracking. */
-bool solve_recursively(){
+/* O(D^2) - Função recursiva que realiza o backtracking. */
+bool solve(){
 	Cell *cur;
 	int i;
 
+	// O(D^2) - Select Unassigned Variable.
+	cur = select_unassigned_variable();
+
 	// O(1) - If Assignment is complete.
-	if ((MRV and priority_queue_empty(pq)) or (!MRV and queue_empty(q))){
+	if (!cur){
 		return true;
 	}
-
-	// O(1) - Select Unassigned Variable.
-	cur = select_unassigned_variable();
 
 	// O(D) - For each value in Order Domain Values.
 	for (i = 1; i <= b->d; i++){
 		// O(1) - If value is consistent with Assignment according to Constraints.
 		if (!cur->possibility[i]){
-			// O(D) - Fazendo a verificação adiante.
+			// O(D) - Rodando o Forward Checking
 			if (FORWARD_CHECKING and check(cur, i)){
 				continue;
 			}
 
-			// O(D * log(D)) - Add var = value to Assignment.
+			// O(D) - Add var = value to Assignment.
 			update(cur, i);
 
 			// O(1) - Incrementando o número de atribuições.
@@ -355,65 +330,16 @@ bool solve_recursively(){
 			}
 
 			// If Recursive Backtracking == success.
-			if (solve_recursively()){
+			if (solve()){
 				return true;
 			}
 
-			// O(D * log(D)) - Remove var = value from Assignment.
+			// O(D) - Remove var = value from Assignment.
 			outdate(cur, i);
 		}
 	}
 
-	// O(log(D)) - Insert variable back to the variables container.
-	if (MRV){
-		b->ref[cur->x][cur->y] = priority_queue_push(pq, &cur);
-	}
-	else{
-		b->ref[cur->x][cur->y] = queue_push(q, &cur);
-	}
-
 	return false;
-}
-
-/* Função de inicialização para realizar o Backtracking. */
-void solve(){
-	int i, j;
-
-	operation_counter = 0;
-
-	// Selecionando estrutura de dados de acordo com a heurística.
-	if (MRV){	
-		pq = priority_queue_new(sizeof(Cell *), cell_compare);
-
-		for (i = 0; i < b->d; i++){
-			for (j = 0; j < b->d; j++){
-				if (!b->cell[i][j]->value){
-					b->ref[i][j] = priority_queue_push(pq, b->cell[i] + j);
-				}
-			}
-		}
-	}
-	else{
-		q = queue_new(sizeof(Cell *));
-
-		for (i = 0; i < b->d; i++){
-			for (j = 0; j < b->d; j++){
-				if (!b->cell[i][j]->value){
-					b->ref[i][j] = queue_push(q, b->cell[i] + j);
-				}
-			}
-		}
-	}
-
-	// Chamando o Backtracking recursivo.
-	solve_recursively();
-
-	if (MRV){
-		priority_queue_delete(pq);
-	}
-	else{
-		queue_delete(q);
-	}
 }
 
 int main(int argc, char *argv[]){
@@ -452,6 +378,8 @@ int main(int argc, char *argv[]){
 
 		// Lendo o tabuleiro.
 		b = read_board();
+
+		operation_counter = 0;
 
 		// Solucionando.
 		solve();

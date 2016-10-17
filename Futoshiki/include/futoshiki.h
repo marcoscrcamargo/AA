@@ -37,7 +37,6 @@ struct Cell{
 };
 
 struct Board{
-	void ***ref; // Referência para os nós da Priority Queue ou Queue.
 	Cell ***cell; // Matriz de casas do tabuleiro.
 	int d; // Dimensão do tabuleiro.
 };

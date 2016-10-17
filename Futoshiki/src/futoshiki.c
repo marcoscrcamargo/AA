@@ -21,7 +21,6 @@ along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "utils.h"
 #include "futoshiki.h"
-#include "priority_queue.h"
 
 /* Cria um tabuleiro vazio. */
 Board *create_board(int);
@@ -47,9 +46,11 @@ int g_dfs(Board *, int **, int, int);
 /* Faz uma DFS no tabuleiro para achar as chains de menoridade. */
 int l_dfs(Board *, int **, int, int);
 
-// Vetores auxiliares para direções UP, DOWN, LEFT e RIGHT.
-const int x_step[] = {-1, 1, 0, 0};
-const int y_step[] = {0, 0, -1, 1};
+#define X 0
+#define Y 1
+
+// Matriz auxiliar para direções UP, DOWN, LEFT e RIGHT.
+const int step[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
 Board *read_board(){
 	int d, r, i, j, x1, y1, x2, y2;
@@ -115,12 +116,10 @@ void free_board(Board *b){
 		}
 
 		free(b->cell[i]);
-		free(b->ref[i]);
 	}
 
 	// Liberando o tabuleiro.
 	free(b->cell);
-	free(b->ref);
 	free(b);
 }
 
@@ -132,13 +131,11 @@ Board *create_board(int d){
 
 	// Alocando linhas da matriz.
 	b->cell = (Cell ***)malloc(d * sizeof(Cell **));
-	b->ref = (void ***)malloc(d * sizeof(void **));
 	b->d = d;
 
 	for (i = 0; i < d; i++){
 		// Alocando colunas da matriz.
 		b->cell[i] = (Cell **)malloc(d * sizeof(Cell *));
-		b->ref[i] = (void **)calloc(d, sizeof(void *));
 
 		for (j = 0; j < d; j++){
 			// Alocando elementos da matriz.
@@ -275,7 +272,7 @@ int g_dfs(Board *b, int **g_chain, int x, int y){
 
 	for (i = 0; i < 4; i++){
 		if (b->cell[x][y]->greater[i]){
-			g_chain[x][y] = max(g_chain[x][y], g_dfs(b, g_chain, x + x_step[i], y + y_step[i]));
+			g_chain[x][y] = max(g_chain[x][y], g_dfs(b, g_chain, x + step[i][X], y + step[i][Y]));
 		}
 	}
 
@@ -287,7 +284,7 @@ int l_dfs(Board *b, int **l_chain, int x, int y){
 
 	for (i = 0; i < 4; i++){
 		if (b->cell[x][y]->lesser[i]){
-			l_chain[x][y] = max(l_chain[x][y], l_dfs(b, l_chain, x + x_step[i], y + y_step[i]));
+			l_chain[x][y] = max(l_chain[x][y], l_dfs(b, l_chain, x + step[i][X], y + step[i][Y]));
 		}
 	}
 

@@ -26,9 +26,6 @@ along with Futoshiki.  If not, see <http://www.gnu.org/licenses/>. */
 
 typedef unsigned char bool;
 
-/* Troca o valor de duas posições da memória diferentes. */
-void swap(void *, void *, int);
-
 /* Retorna o máximo entre dois inteiros. */
 int max(int, int);
 
