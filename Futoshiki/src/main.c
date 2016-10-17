@@ -44,7 +44,7 @@ bool MRV = true;
 bool FORWARD_CHECKING = true;
 
 // Contador de atribuições feitas.
-int operation_counter;
+int att_counter;
 
 /* Função de comparação para as "variáveis" do PSR (casas do tabuleiro). */
 int cell_compare(const void *a, const void *b){
@@ -345,12 +345,12 @@ bool solve_recursively(){
 			update(cur, i);
 
 			// O(1) - Incrementando o número de atribuições.
-			operation_counter++;
+			att_counter++;
 
 			// O(1) - Caso o número de atribuições tenha excedido o máximo permitido.
-			if (operation_counter > MAX_OPERATIONS){
+			if (att_counter > MAX_OPERATIONS){
 				outdate(cur, i);
-				printf("Numero de atribuicoes excede limite maximo\n");
+				printf("Numero de atribuicoes excede limite maximo - ");
 				return true;
 			}
 
@@ -379,7 +379,7 @@ bool solve_recursively(){
 void solve(){
 	int i, j;
 
-	operation_counter = 0;
+	att_counter = 0;
 
 	// Selecionando estrutura de dados de acordo com a heurística.
 	if (MRV){	
@@ -453,13 +453,15 @@ int main(int argc, char *argv[]){
 		// Lendo o tabuleiro.
 		b = read_board();
 
+		printf("%d) ", i + 1);
+
 		// Solucionando.
 		solve();
 
 		end = clock();
 
 		// Imprimindo a solução.
-		printf("%d / %.3lfs - %d)\n", operation_counter, (double)(end - start) / CLOCKS_PER_SEC, i + 1);
+		printf("%d atribuicoes em %.3lf segundos\n", att_counter, (double)(end - start) / CLOCKS_PER_SEC);
 		print_board(b);
 		printf("\n");
 
