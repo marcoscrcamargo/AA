@@ -3,22 +3,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "utils.h"
+#define and &&
+#define or ||
 
 /* Retorna o custo de preencher apenas X posições das L posições disponíveis. */
 int cost(int x, int l){
 	return (l - x) * (l - x);
 }
 
+/* Retorna o valor mínimo entre dois inteiros. */
+int min(int a, int b){
+	return (a < b ? a : b);
+}
+
 int main(){
-	int **dp, *len, i, j, l, n;
+	int *dp, *len, sum, i, j, l, n;
 	char **s;
 
 	// Lendo o valor de L e N.
 	scanf("%d%d%*c", &l, &n);
 
 	// Alocando memória para a PD e para armazenar as strings.
-	dp = (int **)malloc_matrix(n, l, sizeof(int));
+	dp = (int *)malloc(n * sizeof(int));
 	s = (char **)malloc(n * sizeof(char *));
 	len = (int *)malloc(n * sizeof(int));
 
@@ -27,62 +33,52 @@ int main(){
 		scanf("%ms%n%*c", s + i, len + i);
 	}
 
-	// Preenchendo a última linha da matriz da PD (caso base).
-	for (j = 0; j < l; j++){
-		// Se der para colocar a string s[n - 1] na posição j.
-		if (j + len[n - 1] <= l){
-			// Custo de preencher a posição j com a string s[n - 1].
-			dp[n - 1][j] = cost(j + len[n - 1], l);
-		}
-		else{
-			// Impossível colocar a string s[n - 1] na posição j.
-			dp[n - 1][j] = -1;
-		}
-	}
+	// Caso base: Custo de formar uma linha começando da string s[n - 1].
+	dp[n - 1] = cost(len[n - 1], l);
 
 	// Para cada string.
 	for (i = n - 2; i >= 0; i--){
-		// Para cada posição.
-		for (j = 0; j < l; j++){
-			// Se der para colocar a string s[i] na posição j.
-			if (j + len[i] <= l){
-				// Se acabou a linha ao colocar a string s[i] ou se a string s[i + 1] precisar começar da posição 0.
-				if (j + len[i] >= l - 1 or dp[i + 1][j + len[i] + 1] == -1){
-					// Pulando a linha.
-					dp[i][j] = dp[i + 1][0] + cost(j + len[i], l);
-				}
-				else{
-					// Escolhendo entre pular a linha e se manter na mesma linha.
-					dp[i][j] = min(dp[i + 1][0] + cost(j + len[i], l), dp[i + 1][j + len[i] + 1]);
-				}
+		// Inicializando com o custo de colocar essa string sozinha na linha.
+		dp[i] = dp[i + 1] + cost(len[i], l);
+
+		// Tentando adicionar as próximas strings nessa linha.
+		for (j = i + 1, sum = len[i] + len[i + 1] + 1; j < n and sum <= l; j++){
+			// Se não estiver tentando adicionar a última string nessa linha.
+			if (j < n - 1){
+				dp[i] = min(dp[i], dp[j + 1] + cost(sum, l));
+				sum += len[j + 1] + 1;
 			}
 			else{
-				// Impossível colocar a string s[i] na posição j.
-				dp[i][j] = -1;
+				dp[i] = min(dp[i], cost(sum, l));
 			}
 		}
 	}
 
 	// Imprimindo o "caminho" ótimo.
-	for (i = 0, j = 0; i < n - 1; i++){
-		// Se a escolha ótima for pular de linha.
-		if (dp[i][j] == cost(j + len[i], l) + dp[i + 1][0]){
-			printf("%s\n", s[i]);
+	for (i = 0, j = 0, sum = len[0]; j < n - 1; j++){
+		printf("%s", s[j]);
 
-			j = 0;
+		// Fechando essa linha. Intervalo [i, j].
+		if (dp[i] == dp[j + 1] + cost(sum, l)){
+			i = j + 1;
+			sum = len[i];
+			printf("\n");
 		}
 		else{
-			printf("%s ", s[i]);
-
-			j += len[i] + 1;
+			printf(" ");
+			sum += len[j + 1] + 1;
 		}
 	}
-
-	printf("%s\n", s[i]);
+	
+	printf("%s\n", s[j]);
 
 	// Liberando toda memória alocada.
-	free_matrix((void **)dp, n);
-	free_matrix((void **)s, n);
+	for (i = 0; i < n; i++){
+		free(s[i]);
+	}
+
+	free(s);
+	free(dp);
 	free(len);
 
 	return 0;
