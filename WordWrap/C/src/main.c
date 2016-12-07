@@ -43,13 +43,13 @@ int main(){
 
 		// Tentando adicionar as próximas strings nessa linha.
 		for (j = i + 1, sum = len[i] + len[i + 1] + 1; j < n and sum <= l; j++){
-			// Se não estiver tentando adicionar a última string nessa linha.
-			if (j < n - 1){
-				dp[i] = min(dp[i], dp[j + 1] + cost(sum, l));
-				sum += len[j + 1] + 1;
+			// Se estiver tentando adicionar a última string nessa linha.
+			if (j == n - 1){
+				dp[i] = min(dp[i], cost(sum, l));
 			}
 			else{
-				dp[i] = min(dp[i], cost(sum, l));
+				dp[i] = min(dp[i], dp[j + 1] + cost(sum, l));
+				sum += len[j + 1] + 1;
 			}
 		}
 	}
@@ -60,16 +60,19 @@ int main(){
 
 		// Fechando essa linha. Intervalo [i, j].
 		if (dp[i] == dp[j + 1] + cost(sum, l)){
+			printf("\n");
+
 			i = j + 1;
 			sum = len[i];
-			printf("\n");
 		}
 		else{
 			printf(" ");
+			
 			sum += len[j + 1] + 1;
 		}
 	}
 	
+	// Imprimindo a última string.
 	printf("%s\n", s[j]);
 
 	// Liberando toda memória alocada.
