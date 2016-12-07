@@ -21,7 +21,7 @@ int main(){
 	char **s;
 
 	// Lendo o valor de L e N.
-	scanf("%d%d%*c", &l, &n);
+	scanf("%d%d%*[ \n\r]", &l, &n);
 
 	// Alocando memória para a PD e para armazenar as strings.
 	dp = (int *)malloc(n * sizeof(int));
@@ -30,7 +30,7 @@ int main(){
 
 	// Lendo as N strings.
 	for (i = 0; i < n; i++){
-		scanf("%ms%n%*c", s + i, len + i);
+		scanf("%ms%n%*[ \n\r]", s + i, len + i);
 	}
 
 	// Caso base: Custo de formar uma linha começando da string s[n - 1].
