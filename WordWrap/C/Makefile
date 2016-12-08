@@ -1,8 +1,24 @@
-# Victor Forbes - 9293394
+# Marcos Cesar Ribeiro de Camargo (9278045), Victor Luiz Roquete Forbes (9293394)
+# 
+# This file is part of Word Wrap.
+# 
+# Word Wrap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Word Wrap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Word Wrap.  If not, see <http://www.gnu.org/licenses/>.
 
+# Compile
 all:
-	@gcc src/*.c -I include/ -o main -g -Wall
+	@gcc src/*.c -I include/ -o main
+
+# Run
 run:
 	@./main
-fullrun:
-	@valgrind -v --leak-check=full --show-leak-kinds=all --track-origins=yes ./main
