@@ -112,6 +112,12 @@ int main(int argc, char *argv[]){
 	// Preenchendo o vetor de memoização.
 	dp = solve(s, len, l, n);
 
+	for (i = 0; i < n; i++){
+		printf("%d ", dp[i]);
+	}
+
+	printf("\n");
+
 	// Imprimindo a solução ótima.
 	print(dp, s, len, l, n);
 
